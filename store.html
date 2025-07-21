@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Pal Store</title>
+    <link rel="stylesheet" href="store.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo">Premium Pal</div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#products">Products</a></li>
+                <li><a href="#checkout" id="nav-checkout">Checkout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="landing" id="home">
+        <div class="container landing-content">
+            <h1>Unlock Premium Digital Tools</h1>
+            <p>Empower your workflow with instant access to top digital products. Perfect for creators, businesses, and professionals.</p>
+            <a href="#products" class="cta-btn" id="shop-now-btn">Shop Now</a>
+        </div>
+    </section>
+
+    <section class="products-section" id="products">
+        <div class="container">
+            <h2>Our Products</h2>
+            <div class="products-grid">
+                <div class="product-card" data-product="chatgpt">
+                    <div class="product-img"><img src="assets/ChatGPT.jpg" alt="ChatGPT" /></div>
+                    <h3>Premium ChatGPT</h3>
+                    <p class="price">₦5,000</p>
+                    <p class="desc">Unlock advanced AI chat features for productivity and creativity.</p>
+                    <button class="add-cart-btn" data-product="chatgpt">Add to Cart</button>
+                </div>
+                <div class="product-card" data-product="capcut">
+                    <div class="product-img"><img src="assets/Capcut.jpg" alt="CapCut" /></div>
+                    <h3>Premium CapCut</h3>
+                    <p class="price">₦5,000</p>
+                    <p class="desc">Access premium video editing tools for stunning content creation.</p>
+                    <button class="add-cart-btn" data-product="capcut">Add to Cart</button>
+                </div>
+                <div class="product-card" data-product="canva">
+                    <div class="product-img"><img src="assets/Canva.jpg" alt="Canva" /></div>
+                    <h3>Premium Canva</h3>
+                    <p class="price">₦5,000</p>
+                    <p class="desc">Design like a pro with premium templates and features.</p>
+                    <button class="add-cart-btn" data-product="canva">Add to Cart</button>
+                </div>
+                <div class="product-card" data-product="combo">
+                    <div class="product-img"><img src="assets/Combo.jpg" alt="Combo Deal" /></div>
+                    <h3>Combo Deal</h3>
+                    <p class="price">₦20,000</p>
+                    <p class="desc">Get all three premium products at a discounted price.</p>
+                    <button class="add-cart-btn" data-product="combo">Add to Cart</button>
+                </div>
+            </div>
+            <div class="cart-actions">
+                <button class="checkout-btn" id="checkout-btn">Checkout</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="checkout-section" id="checkout" style="display:none;">
+        <div class="container">
+            <h2>Checkout</h2>
+            <div id="cart-summary"></div>
+            <button class="checkout-btn" id="finalize-btn">Finalize Purchase</button>
+            <button class="checkout-btn secondary" id="back-btn">Back to Shop</button>
+        </div>
+    </section>
+
+    <script src="store.js"></script>
+    <!-- Paystack Inline Script -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <script>
+    // Ensure 'Shop Now' button scrolls and shows products section
+    document.addEventListener('DOMContentLoaded', function() {
+      var shopBtn = document.getElementById('shop-now-btn');
+      if (shopBtn) {
+        shopBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          // Show products section if hidden
+          var productsSection = document.getElementById('products');
+          if (productsSection) {
+            productsSection.style.display = '';
+            productsSection.scrollIntoView({ behavior: 'smooth' });
+          }
+          // Hide landing section if desired
+          var landingSection = document.getElementById('home');
+          if (landingSection) {
+            landingSection.style.display = 'none';
+          }
+        });
+      }
+
+      // Paystack payment integration
+      var finalizeBtn = document.getElementById('finalize-btn');
+      if (finalizeBtn) {
+        finalizeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          // Get cart total from store.js global cart
+          if (typeof window.cart === 'undefined' || Object.keys(window.cart).length === 0) {
+            alert('Your cart is empty.');
+            return;
+          }
+          var PRODUCTS = window.PRODUCTS || {};
+          var cart = window.cart || {};
+          var total = 0;
+          for (var key in cart) {
+            if (PRODUCTS[key]) {
+              total += PRODUCTS[key].price * cart[key];
+            }
+          }
+          if (total === 0) {
+            alert('Your cart is empty.');
+            return;
+          }
+          // Prompt for email
+          var email = prompt('Enter your email for payment receipt:');
+          if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+            alert('Please enter a valid email.');
+            return;
+          }
+          // Paystack payment
+          var handler = PaystackPop.setup({
+            key: 'pk_live_f186dc6f801f4ea73ef5fbc160a4a09dfc4ceffe', // LIVE Paystack key
+            email: email,
+            amount: total * 100, // in kobo
+            currency: 'NGN',
+            ref: 'PAL-' + Math.floor((Math.random() * 1000000000) + 1),
+            callback: function(response) {
+              alert('Payment complete! Reference: ' + response.reference);
+              // Clear cart and update UI
+              if (window.cart) window.cart = {};
+              if (typeof window.renderCartSummary === 'function') window.renderCartSummary();
+              // Show Email button for user to send their email to your inbox
+              var container = document.getElementById('cart-summary');
+              if (container) {
+                var mailBtn = document.createElement('button');
+                mailBtn.textContent = 'Send Email to Admin';
+                mailBtn.className = 'checkout-btn';
+                mailBtn.style.marginTop = '1.5rem';
+                mailBtn.onclick = function() {
+                  var adminEmail = 'premiumpalofficial@gmail.com'; // Replace with your email address
+                  var subject = encodeURIComponent('Customer Purchase Email');
+                  var body = encodeURIComponent('Customer email: ' + email);
+                  window.open('mailto:' + adminEmail + '?subject=' + subject + '&body=' + body);
+                };
+                // Remove previous button if exists
+                var oldBtn = document.getElementById('mail-btn');
+                if (oldBtn) oldBtn.remove();
+                mailBtn.id = 'mail-btn';
+                container.appendChild(mailBtn);
+              }
+              // Return to products section
+              var productsSection = document.getElementById('products');
+              if (productsSection) {
+                productsSection.style.display = '';
+                productsSection.scrollIntoView({ behavior: 'smooth' });
+              }
+              var checkoutSection = document.getElementById('checkout');
+              if (checkoutSection) checkoutSection.style.display = 'none';
+            },
+            onClose: function() {
+              alert('Payment window closed.');
+            }
+          });
+          handler.openIframe();
+        });
+      }
+    });
+    </script>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+</body>
+</html>
